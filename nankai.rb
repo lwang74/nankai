@@ -56,7 +56,7 @@ class NankaiPage
 		# form3.field_with(:name => "xkxh1").value = want_code
 		# form3.field_with(:name => "operation").value = 'xuanke'
 		# page4 = form3.click_button(form3.button_with(:name => 'xuanke'))
-		wants = %W(0014 0041 0050 0091)
+		wants = [%W(0014 0041 0050 0091)]
 		n=100
 		while(n>0) do
 			wants.each{|one|
@@ -64,11 +64,12 @@ class NankaiPage
 			}
 
 			codes = get_selected(page3)
-			wants.each{|one|
+			wants.flatten.each{|one|
 				if codes.include?(one)
 					puts "#{one} SUCCESS!!!!!!"
 				else 
-					puts "#{one} FAIL!!!!!!"
+					print '.'
+					# puts "#{one} FAIL!!!!!!"
 				end
 			}		
 			sleep 30
@@ -81,7 +82,10 @@ class NankaiPage
 
 	def sel page, code
 		form = page.form_with(:name => "swichXsxkActionForm")
-		form.field_with(:name => "xkxh1").value = code
+		form.field_with(:name => "xkxh1").value = code[0]
+		form.field_with(:name => "xkxh2").value = code[1] if code[1]
+		form.field_with(:name => "xkxh3").value = code[2] if code[2]
+		form.field_with(:name => "xkxh4").value = code[3] if code[3]
 		form.field_with(:name => "operation").value = 'xuanke'
 		page = form.click_button(form.button_with(:name => 'xuanke'))
 	end
