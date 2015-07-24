@@ -20,14 +20,12 @@ class NankaiPage
 
 		# pp @page 
 		# @valid_code = @page.images_with(:src=>"/ValidateCode")[0]
-		valid_img = "ValidateCode.jpg"
-		FileUtils.rm_f(valid_img)
-		@agent.get("http://222.30.32.10/ValidateCode").save(valid_img)
+		save_img "http://222.30.32.10/ValidateCode", "ValidateCode.jpg"
 
 		form = @page.form_with(:name => "stdloginActionForm")
 		form.field_with(:name => "usercode_text").value = "1411993"
 		form.field_with(:name => "userpwd_text").value = "040620"
-		puts "Input validate code:"
+		print "Input validate code:"
 		form.field_with(:name => "checkcode_text").value = gets
 
 		# results = @agent.submit form
@@ -56,28 +54,49 @@ class NankaiPage
 		# form3.field_with(:name => "xkxh1").value = want_code
 		# form3.field_with(:name => "operation").value = 'xuanke'
 		# page4 = form3.click_button(form3.button_with(:name => 'xuanke'))
-		wants = [%W(0014 0041 0050 0091)]
-		n=100
-		while(n>0) do
-			wants.each{|one|
-				page3 = sel(page3, one)
-			}
+		# wants = [%W(0014 0041 0050 0091)]
+		# n=10000
+		# while(n>0) do
+			# wants.each{|one|
+			# 	page3 = sel(page3, one)
+			# }
 
-			codes = get_selected(page3)
-			wants.flatten.each{|one|
-				if codes.include?(one)
-					puts "#{one} SUCCESS!!!!!!"
-				else 
-					print '.'
-					# puts "#{one} FAIL!!!!!!"
-				end
-			}		
-			sleep 30
-			n-=1
-		end
-		pp codes
+			# codes = get_selected(page3)
+			# wants.flatten.each{|one|
+			# 	if codes.include?(one)
+			# 		puts "#{one} SUCCESS!!!!!!"
+			# 	else 
+			# 		# print '.'
+			# 		# puts "#{one} FAIL!!!!!!"
+			# 	end
+			# }
+
+			page3 = get_course(page3)
+			puts codes = get_selected(page3)
+		# 	print '.'		
+		# 	sleep 30
+		# 	n-=1
+		# end
+		# pp codes
 	rescue Mechanize::ResponseCodeError=>e
 		puts e.message
+	end
+
+	def get_course page
+		form = page.form_with(:name => "swichXsxkActionForm")
+		img = page.image_with(:alt=>'无验证码图片')
+		save_img img.src, "second.jpg"
+		print 'Input second code:'
+		second_code = gets
+		form.field_with(:name => "code").value = second_code
+		form.field_with(:name => "operation").value = 'shengyuwai'
+		form['departIncode'] = "924"
+		page = form.click_button(form.button_with(:value => '限选剩余名额'))
+	end
+
+	def save_img img_url, img_name
+		FileUtils.rm_f(img_name)
+		@agent.get(img_url).save(img_name)
 	end
 
 	def sel page, code
@@ -87,21 +106,23 @@ class NankaiPage
 		form.field_with(:name => "xkxh3").value = code[2] if code[2]
 		form.field_with(:name => "xkxh4").value = code[3] if code[3]
 		form.field_with(:name => "operation").value = 'xuanke'
+
 		page = form.click_button(form.button_with(:name => 'xuanke'))
 	end
 
 	def get_selected page
 		all = []
 		loop do
-			form = page.form_with(:name => "swichXsxkActionForm")
-			form.field_with(:name => "operation").value = 'coursepage'
-			form.field_with(:name => "index").value = 'next'
 			code = get_info(page)
 			if all.size>=1 and code==all[all.size-1]
 				break
 			else
 				all<<code
 			end
+			form = page.form_with(:name => "swichXsxkActionForm")
+			# form.field_with(:name => "operation").value = 'coursepage'
+			form.field_with(:name => "operation").value = 'remainpage'
+			form.field_with(:name => "index").value = 'next'
 			page = form.submit
 		end
 		all.flatten
@@ -125,15 +146,15 @@ class NankaiPage
 	end
 	def get_info page
 		codes = page.search('//table[2]/tr').map{|e|
-			e.search('td[2]').map{|td|
-				td.text
-			}
-			# puts '==========================================================='
-			# page.search('//table[2]/tr').map{|e|
-			# 	puts e.search('td').map{|td|
-			# 		td.text
-			# 	}.join('-')
+			# e.search('td[2]').map{|td|
+			# 	td.text
 			# }
+			e.search('td').map{|td|
+				td.text
+			}.join(' - ')
+			# puts e.search('td').map{|td|
+			# 	td.text
+			# }.join('-')
 		}
 		codes.shift
 		codes.flatten
