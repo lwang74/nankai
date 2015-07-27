@@ -12,7 +12,7 @@ class NankaiPage
 
 		@agent.user_agent_alias = 'Windows IE 6' 
 		# agent.add_auth('http://www.baidu.com/', 'itc940167', 'naomi_94c167', nil, 'ITC')
-		@agent.set_proxy('127.0.0.1', 3128)
+		# @agent.set_proxy('127.0.0.1', 3128)
 	end
 
 	def connect url
@@ -71,8 +71,19 @@ class NankaiPage
 			# 	end
 			# }
 
-			page3 = get_course(page3)
-			puts codes = get_selected(page3)
+			page3 = get_course(page3, "924", 'shengyuwai', '限选剩余名额')
+			codes = get_selected(page3)
+			puts codes.map{|code|
+				# p code
+				code #if /校本部/=~ code
+			}.compact
+
+			page3 = get_course(page3, "909", 'shengyunei', '计划内剩余名额')
+			codes = get_selected(page3)
+			puts codes.map{|code|
+				# p code
+				code #if /校本部/=~ code
+			}.compact
 		# 	print '.'		
 		# 	sleep 30
 		# 	n-=1
@@ -82,16 +93,25 @@ class NankaiPage
 		puts e.message
 	end
 
-	def get_course page
+	def get_course page, sel_code, op, btn
 		form = page.form_with(:name => "swichXsxkActionForm")
 		img = page.image_with(:alt=>'无验证码图片')
 		save_img img.src, "second.jpg"
 		print 'Input second code:'
 		second_code = gets
 		form.field_with(:name => "code").value = second_code
-		form.field_with(:name => "operation").value = 'shengyuwai'
-		form['departIncode'] = "924"
-		page = form.click_button(form.button_with(:value => '限选剩余名额'))
+		
+		form.field_with(:name => "operation").value = op
+		form['departIncode'] = sel_code
+		page = form.click_button(form.button_with(:value => btn))
+
+		# form.field_with(:name => "operation").value = 'shengyuwai'
+		# form['departIncode'] = "924"
+		# page = form.click_button(form.button_with(:value => '限选剩余名额'))
+		
+		# form.field_with(:name => "operation").value = 'shengyunei'
+		# form['departIncode'] = "909" 
+		# page = form.click_button(form.button_with(:value => '计划内剩余名额'))
 	end
 
 	def save_img img_url, img_name
@@ -175,6 +195,7 @@ if __FILE__==$0
 
 	# 课程 2311, (必修剩余名额不足)选课操作失败(或不在指定的选课年级)！
 # 0014 0041 0050 0091
+# 1600
 end
 
 
